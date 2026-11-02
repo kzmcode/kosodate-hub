@@ -41,14 +41,16 @@ export function LoginPage() {
   async function google() {
     setError(''); setInfo(''); setBusy(true);
     const provider = new GoogleAuthProvider();
-    let changed = false;
+    // ポップアップはボタン押下の直後に開く必要がある（先に await するとブロックされる）。
+    // 保存先の切り替えは Auth 内部で順番に処理されるので、ログインより先に反映される
+    const keepApplied = applyKeep();
+    keepApplied.catch(() => undefined); // 失敗はログイン後の await で扱う
     try {
-      changed = await applyKeep();
       await signInWithPopup(auth, provider);
-      if (changed) { window.location.reload(); return; }
+      if (await keepApplied) { window.location.reload(); return; }
     } catch (e) {
       if (shouldFallbackToRedirect(e)) {
-        try { await signInWithRedirect(auth, provider); return; } catch (e2) { setError(authErrorMessage(e2)); }
+        try { await keepApplied; await signInWithRedirect(auth, provider); return; } catch (e2) { setError(authErrorMessage(e2)); }
       } else setError(authErrorMessage(e));
     }
     setBusy(false);

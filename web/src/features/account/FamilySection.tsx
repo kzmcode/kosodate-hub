@@ -169,6 +169,14 @@ export function FamilySection() {
       </Card>
 
       <DangerFlow open={flow?.type === 'propose'} onClose={() => setFlow(null)} title="管理者を移譲する" actionLabel="本人確認して提案" variant="primary" errorMessage={transferErrorMessage}
+        resumeId="transferPropose"
+        resumeData={flow?.type === 'propose' ? JSON.stringify({ uid: flow.uid, name: flow.name }) : undefined}
+        onResume={(d) => {
+          try {
+            const v = JSON.parse(d ?? 'null') as { uid?: unknown; name?: unknown } | null;
+            if (v && typeof v.uid === 'string') setFlow({ type: 'propose', uid: v.uid, name: typeof v.name === 'string' ? v.name : '' });
+          } catch { /* 開き直せなければ何もしない */ }
+        }}
         run={async () => {
           if (flow?.type !== 'propose') return;
           await api.transferOwnership({ familyId, toUid: flow.uid });
@@ -179,6 +187,7 @@ export function FamilySection() {
       </DangerFlow>
 
       <DangerFlow open={flow?.type === 'accept'} onClose={() => setFlow(null)} title="管理者を引き受ける" actionLabel="本人確認して承諾" variant="primary" errorMessage={transferErrorMessage}
+        resumeId="transferAccept" onResume={() => setFlow({ type: 'accept' })}
         run={async () => {
           await api.acceptOwnershipTransfer({ familyId });
           setFlow(null);

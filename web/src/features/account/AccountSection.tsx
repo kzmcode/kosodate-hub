@@ -62,7 +62,8 @@ export function AccountSection() {
         <Button variant="danger" disabled={isOwner && others.length > 0} onClick={() => setFlow('account')}>アカウントを削除する</Button>
       </Card>
 
-      <DangerFlow open={flow === 'family'} onClose={() => setFlow(null)} title="家族データの削除" confirmText={family?.name} actionLabel="本人確認して削除"
+      <DangerFlow open={flow === 'family'} onClose={() => setFlow(null)} title="家族データの削除" confirmText={family?.name}
+        resumeId="deleteFamily" onResume={() => setFlow('family')} actionLabel="本人確認して削除"
         run={async () => {
           await api.deleteFamily({ familyId: familyId!, confirmName: family!.name });
           await clearLocalData();
@@ -72,6 +73,7 @@ export function AccountSection() {
       </DangerFlow>
 
       <DangerFlow open={flow === 'account'} onClose={() => setFlow(null)} title="アカウントの削除" actionLabel="本人確認して削除"
+        resumeId="deleteAccount" onResume={() => setFlow('account')}
         run={async () => {
           // 認証が有効なうちに FCM トークン・devices・SW を整理（削除後は Rules で消せないため）
           await cleanupDeviceRegistration(user?.uid);

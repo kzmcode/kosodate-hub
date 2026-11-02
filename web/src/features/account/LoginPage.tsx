@@ -3,9 +3,10 @@ import {
   GoogleAuthProvider, createUserWithEmailAndPassword, getRedirectResult, sendEmailVerification,
   sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect,
 } from 'firebase/auth';
-import { auth } from '../../lib/firebase';
+import { auth, enableTrustedDeviceCache, isTrustedDevice } from '../../lib/firebase';
 import { Button, Card, Field, Logo, SegmentedControl, TextInput } from '../../components';
 import { authErrorMessage, isInAppBrowser, shouldFallbackToRedirect } from './logic/errors';
+import { defaultKeepSignedIn, isStandaloneDisplay } from './logic/keepSignedIn';
 import './account.css';
 
 type Mode = 'login' | 'register';
@@ -19,6 +20,19 @@ export function LoginPage() {
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const inApp = isInAppBrowser(navigator.userAgent);
+  const [keep, setKeep] = useState(() =>
+    defaultKeepSignedIn(isTrustedDevice(), isStandaloneDisplay(window.matchMedia?.bind(window), navigator as { standalone?: boolean })),
+  );
+
+  /**
+   * ログイン前に「保持する」の選択を反映する（ログイン情報の保存先と信頼端末フラグ）。
+   * Firestore のキャッシュ種別は読み込み時に決まるため、切り替えた場合はログイン後に再読み込みする
+   */
+  async function applyKeep(): Promise<boolean> {
+    const changed = keep !== isTrustedDevice();
+    await enableTrustedDeviceCache(keep);
+    return changed;
+  }
 
   useEffect(() => {
     getRedirectResult(auth).catch((e) => setError(authErrorMessage(e)));
@@ -27,8 +41,11 @@ export function LoginPage() {
   async function google() {
     setError(''); setInfo(''); setBusy(true);
     const provider = new GoogleAuthProvider();
+    let changed = false;
     try {
+      changed = await applyKeep();
       await signInWithPopup(auth, provider);
+      if (changed) { window.location.reload(); return; }
     } catch (e) {
       if (shouldFallbackToRedirect(e)) {
         try { await signInWithRedirect(auth, provider); return; } catch (e2) { setError(authErrorMessage(e2)); }
@@ -41,12 +58,14 @@ export function LoginPage() {
     ev.preventDefault();
     setError(''); setInfo(''); setBusy(true);
     try {
+      const changed = await applyKeep();
       if (mode === 'register') {
         const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
         try { await sendEmailVerification(cred.user); } catch { /* 後で設定画面から再送できる */ }
       } else {
         await signInWithEmailAndPassword(auth, email.trim(), password);
       }
+      if (changed) window.location.reload();
     } catch (e) {
       setError(authErrorMessage(e));
       setBusy(false);
@@ -76,6 +95,14 @@ export function LoginPage() {
 
       <Card className="stack">
         <Button variant="primary" block loading={busy} onClick={google}>Google でログイン</Button>
+      </Card>
+
+      <Card className="stack">
+        <label className="row">
+          <input type="checkbox" checked={keep} onChange={(e) => setKeep(e.target.checked)} />
+          <strong>この端末でログインを保持する（自分専用の端末）</strong>
+        </label>
+        <p className="small muted">オンにすると、アプリを閉じてもログインしたままになり、記録をこの端末に保存してオフラインでも使えます。家族で共用する端末や借りた端末ではオフにしてください（タブやアプリを閉じるとログアウトします）。あとから「設定 → この端末」で変更できます。</p>
       </Card>
 
       <Card>

@@ -24,7 +24,7 @@ messaging.onBackgroundMessage((payload) => {
   const d = payload.data || {};
   self.registration.showNotification(d.title || 'Kosodate Hub', {
     body: d.body || '新しいお知らせがあります',
-    icon: '/icons/icon.svg',
+    icon: '/icons/icon-192.png',
     data: { url: self.resolveNotificationUrl(d.url, self.location.origin) },
   });
 });

@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
     react(),
     VitePWA({
       registerType: 'prompt', // 更新は「更新があります」トーストでユーザーが適用
-      includeAssets: ['icons/icon.svg'],
+      includeAssets: ['icons/favicon-48.png', 'icons/apple-touch-icon.png'],
       workbox: {
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/__\//, /^\/firebase-messaging-sw\.js$/],
@@ -29,8 +29,9 @@ export default defineConfig(({ mode }) => {
         theme_color: '#FCF8F4',
         background_color: '#FCF8F4',
         icons: [
-          { src: '/icons/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
-          { src: '/icons/icon-maskable.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' },
+          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
     }),

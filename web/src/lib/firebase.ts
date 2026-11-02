@@ -73,6 +73,9 @@ export async function getMessagingIfSupported(): Promise<Messaging | null> {
   }
 }
 
+/** FCM 用 SW のスコープ（Firebase SDK の既定と同じ。PWA 本体の '/' とは別にする） */
+export const FCM_SW_SCOPE = '/firebase-cloud-messaging-push-scope';
+
 /** FCM トークン取得（許可済みの場合のみ呼ぶこと）。SW へ設定値をクエリで渡す */
 export async function getFcmToken(): Promise<string | null> {
   const messaging = await getMessagingIfSupported();
@@ -83,7 +86,8 @@ export async function getFcmToken(): Promise<string | null> {
     messagingSenderId: config.messagingSenderId ?? '',
     appId: config.appId ?? '',
   });
-  const registration = await navigator.serviceWorker.register(`/firebase-messaging-sw.js?${q}`);
+  // スコープを分ける。省略すると '/' になり、PWA 本体の sw.js の登録を置き換えてしまう（更新ボタンが効かなくなる）
+  const registration = await navigator.serviceWorker.register(`/firebase-messaging-sw.js?${q}`, { scope: FCM_SW_SCOPE });
   return getToken(messaging, { vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY, serviceWorkerRegistration: registration });
 }
 

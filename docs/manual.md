@@ -306,7 +306,7 @@ open -e web/.env
 
 ## 8. ローカル開発（エミュレータ + GAS dev-server）
 
-`web/.env.local`（または `.env.development`）に `VITE_USE_EMULATORS=true` と `VITE_GAS_ENDPOINT=http://localhost:8787` を設定。ポートは Auth 9099 / Firestore 8080 / Hosting 5000 / Emulator UI(自動)。GAS 用 dev-server は 8787。
+`web/.env.development.local`（`vite dev` のときだけ読まれ、本番ビルドには入らない）に `VITE_USE_EMULATORS=true` と `VITE_GAS_ENDPOINT=http://localhost:8787` を設定。ポートは Auth 9099 / Firestore 8080 / Hosting 5000 / Emulator UI(自動)。GAS 用 dev-server は 8787。
 
 ### 手順（ターミナル3つ）
 ```bash

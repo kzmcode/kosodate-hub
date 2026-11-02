@@ -99,7 +99,7 @@ cd web && npm run dev
 詳細は [docs/manual.md](docs/manual.md)（7・10・13 章）と [docs/gas/README.md](docs/gas/README.md) にあります。要点は次のとおりです。
 
 - **Rules / Indexes**: `firebase deploy --only firestore:rules,firestore:indexes`
-- **Hosting**: `npm --prefix web run build` の後に `firebase deploy --only hosting`（本番ビルドでは `VITE_USE_EMULATORS` を true にしない）
+- **Hosting**: `npm --prefix web run build` の後に `firebase deploy --only hosting`（開発用の値は `web/.env.development.local` に置く。本番ビルドにエミュレータ接続・`demo-` プロジェクト・ローカルの GAS が入るとビルドが止まる）
 - **GAS**: `cd gas && npm run push`（build と `clasp push`）。更新は Apps Script エディタの「デプロイを管理」で既存デプロイを新バージョンにし、`/exec` の URL を固定します。`clasp deploy` / `npm run deploy` は新しいデプロイを作るため初回のみ使います。
 - **トリガー**: 初回にエディタで `setupTriggers` を実行して権限を承認し、`dispatchNotifications`（5分毎）と `dailyBackup` を作成します。
 - 順序は GAS、Rules / Indexes、Hosting の順です。

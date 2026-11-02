@@ -118,7 +118,7 @@ firebase emulators:start --only firestore,auth --project demo-kosodate-hub   # �
 cd gas && FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 npm run dev   # http://127.0.0.1:8787
 ```
 
-`web/.env.local` に `VITE_GAS_ENDPOINT=http://127.0.0.1:8787`（`localhost` でも可）。環境変数: `FIREBASE_PROJECT_ID`（既定 demo-kosodate-hub。**`demo-` で始まらないと起動拒否**）, `FIREBASE_WEB_API_KEY`（既定 fake-api-key）, `FIRESTORE_EMULATOR_HOST` / `FIREBASE_AUTH_EMULATOR_HOST`（**両方必須**、無いと起動拒否）。`127.0.0.1` でのみ待ち受け。詳細は [core](core/README.md)。Drive は `gas/.local-drive/` に保存。FCM は無効（`FCM_ENABLED=1` で有効化）。
+`web/.env.development.local` に `VITE_GAS_ENDPOINT=http://127.0.0.1:8787`（`localhost` でも可）。環境変数: `FIREBASE_PROJECT_ID`（既定 demo-kosodate-hub。**`demo-` で始まらないと起動拒否**）, `FIREBASE_WEB_API_KEY`（既定 fake-api-key）, `FIRESTORE_EMULATOR_HOST` / `FIREBASE_AUTH_EMULATOR_HOST`（**両方必須**、無いと起動拒否）。`127.0.0.1` でのみ待ち受け。詳細は [core](core/README.md)。Drive は `gas/.local-drive/` に保存。FCM は無効（`FCM_ENABLED=1` で有効化）。
 
 テスト: `npm test`（エミュレータ不要）、`npm run test:emu`（`firebase emulators:exec` で Firestore/Auth エミュレータ結合テスト。Java 21 が必要）、`npm run typecheck`。
 

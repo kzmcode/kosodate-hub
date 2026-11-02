@@ -37,9 +37,31 @@ describe('assertNoEmulatorsInProduction', () => {
   it('production + true は失敗', () => {
     expect(() => assertNoEmulatorsInProduction('production', { VITE_USE_EMULATORS: 'true' })).toThrow();
   });
+  it('production + demo- プロジェクトは失敗', () => {
+    expect(() => assertNoEmulatorsInProduction('production', { VITE_FIREBASE_PROJECT_ID: 'demo-kosodate-hub' })).toThrow(/demo-kosodate-hub/);
+  });
+  it('production + ローカルの GAS は失敗', () => {
+    expect(() => assertNoEmulatorsInProduction('production', { VITE_GAS_ENDPOINT: 'http://localhost:8787' })).toThrow(/localhost/);
+    expect(() => assertNoEmulatorsInProduction('production', { VITE_GAS_ENDPOINT: 'http://127.0.0.1:8787' })).toThrow();
+  });
+  it('本番の値なら production でも通る', () => {
+    expect(() =>
+      assertNoEmulatorsInProduction('production', {
+        VITE_USE_EMULATORS: 'false',
+        VITE_FIREBASE_PROJECT_ID: 'kosodate-hub-kzm',
+        VITE_GAS_ENDPOINT: 'https://script.google.com/macros/s/x/exec',
+      }),
+    ).not.toThrow();
+  });
   it('それ以外は通る', () => {
     expect(() => assertNoEmulatorsInProduction('production', { VITE_USE_EMULATORS: 'false' })).not.toThrow();
     expect(() => assertNoEmulatorsInProduction('production', {})).not.toThrow();
-    expect(() => assertNoEmulatorsInProduction('development', { VITE_USE_EMULATORS: 'true' })).not.toThrow();
+    expect(() =>
+      assertNoEmulatorsInProduction('development', {
+        VITE_USE_EMULATORS: 'true',
+        VITE_FIREBASE_PROJECT_ID: 'demo-kosodate-hub',
+        VITE_GAS_ENDPOINT: 'http://localhost:8787',
+      }),
+    ).not.toThrow();
   });
 });

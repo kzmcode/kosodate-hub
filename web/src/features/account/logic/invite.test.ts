@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildInviteLink, extractToken, parseHashToken, stashInviteFromLocation } from './invite';
+import { buildInviteLink, extractToken, noFamilyDestination, parseHashToken, readStashedInvite, stashInviteFromLocation } from './invite';
 
 const T = 'abcDEF123_-abcDEF123_-abcDEF123_-abcDEF12345';
 describe('invite token', () => {
@@ -31,5 +31,21 @@ describe('stashInviteFromLocation', () => {
   });
   it('drops malformed token hash too', () => {
     expect(stashInviteFromLocation({ pathname: '/join', search: '', hash: '#token=short' }, () => {})).toBe('/join');
+  });
+});
+
+describe('readStashedInvite / noFamilyDestination', () => {
+  const tok = 'a'.repeat(32);
+  const store = (v: string | null) => ({ getItem: () => v });
+  it('形式が正しいトークンだけ返す', () => {
+    expect(readStashedInvite(store(tok))).toBe(tok);
+    expect(readStashedInvite(store('short'))).toBeNull();
+    expect(readStashedInvite(store(null))).toBeNull();
+    expect(readStashedInvite(null)).toBeNull();
+    expect(readStashedInvite({ getItem: () => { throw new Error('denied'); } })).toBeNull();
+  });
+  it('招待を受け取っていれば参加画面、なければ初期設定', () => {
+    expect(noFamilyDestination(tok)).toBe('/join');
+    expect(noFamilyDestination(null)).toBe('/setup');
   });
 });

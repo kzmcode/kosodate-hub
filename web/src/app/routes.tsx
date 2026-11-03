@@ -5,7 +5,7 @@ import { useAuth, useFamily } from '../context';
 import { EventDetailPage, HomePage, RecordsPage } from '../features/records';
 import { HandoverDetailPage, PlansPage, ScheduleDetailPage, TaskDetailPage } from '../features/plans';
 import { HealthPage, HealthRoutes } from '../features/health';
-import { INVITE_STORAGE_KEY, stashInviteFromLocation } from '../features/account/logic/invite';
+import { INVITE_STORAGE_KEY, noFamilyDestination, readStashedInvite, stashInviteFromLocation } from '../features/account/logic/invite';
 import { JoinPage, LoginPage, MorePage, MoreRoutes, SetupPage } from '../features/account';
 import { isSetupInFlight } from '../features/account/util';
 
@@ -28,11 +28,15 @@ function RequireAuth() {
   return <Outlet />;
 }
 
-/** 家族未所属→/setup */
+function stashedInvite(): string | null {
+  try { return readStashedInvite(sessionStorage); } catch { return null; }
+}
+
+/** 家族未所属→/setup（招待を受け取っていれば /join） */
 function RequireFamily() {
   const { familyId, loading } = useFamily();
   if (loading) return <Loading />;
-  if (!familyId) return <Navigate to="/setup" replace />;
+  if (!familyId) return <Navigate to={noFamilyDestination(stashedInvite())} replace />;
   return <Outlet />;
 }
 
@@ -44,7 +48,8 @@ function RedirectIfAuthed({ children }: { children: ReactNode }) {
   if (loading || (user && fl)) return <Loading />;
   if (user) {
     const from = (loc.state as { from?: string } | null)?.from;
-    return <Navigate to={from ?? (familyId ? '/' : '/setup')} replace />;
+    // 未所属なら招待の有無で決める（招待から来ていれば from は /join のはずだが、リダイレクトでのログインでは from が消える）
+    return <Navigate to={familyId ? (from ?? '/') : noFamilyDestination(stashedInvite())} replace />;
   }
   return <>{children}</>;
 }
@@ -55,6 +60,8 @@ function SetupGuard({ children }: { children: ReactNode }) {
   // 作成〜招待発行の途中は SetupPage 自身が遷移先を決める（読み込み表示に切り替えると SetupPage が外れてしまう）
   if (isSetupInFlight()) return <>{children}</>;
   if (loading) return <Loading />;
+  // 招待を受け取っているなら、新しい家族を作らせずに参加画面へ
+  if (!familyId && stashedInvite()) return <Navigate to="/join" replace />;
   if (familyId) {
     // 作成直後は SetupPage が招待を sessionStorage('ch.setupInvite') に保存して /more/family へ移動する。
     // ガードが先に '/' へ飛ばして招待表示を失わないよう、保存済みならそちらへ転送する。

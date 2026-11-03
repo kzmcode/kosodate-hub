@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api, ApiError, apiErrorMessage } from '../../lib/api';
 import { useAuth, useFamily } from '../../context';
 import { Button, Card, Field, SegmentedControl, TextInput } from '../../components';
@@ -75,6 +75,11 @@ export function SetupPage() {
   return (
     <main className="page stack acc-narrow">
       <h1>はじめての設定</h1>
+      <Card tone="warning" className="stack">
+        <strong>招待を受け取った方へ</strong>
+        <p className="small">相手から招待リンクが届いている場合は、ここで家族を作らないでください。別の家族になり、記録が共有されません。招待リンクを開くか、下のリンクから招待コードを入力して参加してください。</p>
+        <Link to="/join">招待に参加する</Link>
+      </Card>
       <div className="acc-steps" aria-label="進行状況">
         {STEPS.map((s) => <span key={s.key} className={s.key === step ? 'is-on' : ''} aria-current={s.key === step ? 'step' : undefined}>{s.label}</span>)}
       </div>

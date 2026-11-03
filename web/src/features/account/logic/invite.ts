@@ -25,6 +25,25 @@ export function extractToken(input: string): string | null {
   return m && isValidToken(m[1]) ? m[1] : null;
 }
 
+/** ログイン往復用に退避した招待トークン（sessionStorage）。無い・形式不正は null */
+export function readStashedInvite(storage: Pick<Storage, 'getItem'> | null | undefined): string | null {
+  try {
+    const t = storage?.getItem(INVITE_STORAGE_KEY);
+    return t && isValidToken(t) ? t : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 家族に未所属のログイン済みユーザーの行き先。招待を受け取っている（トークン退避済み）なら参加画面、
+ * そうでなければ初期設定。リダイレクトでのログインは戻り先（state.from）が消えるため、
+ * ここで招待を見ないと初期設定に進み、招待とは別の家族を作ってしまう
+ */
+export function noFamilyDestination(stashedInvite: string | null): '/join' | '/setup' {
+  return stashedInvite ? '/join' : '/setup';
+}
+
 export function buildInviteLink(origin: string, token: string): string {
   return `${origin}/join#token=${token}`;
 }

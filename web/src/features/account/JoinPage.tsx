@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api, apiErrorMessage } from '../../lib/api';
-import { useAuth } from '../../context';
+import { useAuth, useFamily } from '../../context';
 import { Button, Card, Field, TextInput } from '../../components';
 import { INVITE_STORAGE_KEY, extractToken, parseHashToken } from './logic/invite';
 import { inviteErrorMessage } from './logic/errors';
@@ -19,6 +19,8 @@ function store(t: string | null): void {
 
 export function JoinPage() {
   const { user } = useAuth();
+  const { familyId } = useFamily();
+  const navigate = useNavigate();
   const [token, setToken] = useState<string | null>(null);
   const [manual, setManual] = useState('');
   const [preview, setPreview] = useState<Preview | null>(null);
@@ -113,7 +115,14 @@ export function JoinPage() {
         </Card>
       )}
 
-      <p className="small"><Link to="/">ホームに戻る</Link></p>
+      {!familyId && !preview && !loading && (
+        <Card className="stack">
+          <p className="small muted">招待が使えない場合は、相手に新しい招待リンクを発行してもらってください。自分で家族を作る場合だけ、下のボタンを押してください（招待した相手とは別の家族になり、記録は共有されません）。</p>
+          <Button onClick={() => { store(null); navigate('/setup', { replace: true }); }}>招待を使わずに家族を新しく作る</Button>
+        </Card>
+      )}
+
+      {familyId && <p className="small"><Link to="/">ホームに戻る</Link></p>}
     </main>
   );
 }

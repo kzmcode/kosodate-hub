@@ -75,7 +75,11 @@ export function shouldFallbackToRedirect(e: unknown): boolean {
   return code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment' || code === 'auth/web-storage-unsupported';
 }
 
-/** LINE・Instagram などのアプリ内ブラウザか（Google ログインがブロック・失敗しやすい） */
+/**
+ * LINE・Instagram・Google アプリなどのアプリ内ブラウザか。
+ * ポップアップが使えず、リダイレクトもログイン途中の情報（sessionStorage）が引き継がれずに失敗する
+ * （Firebase の「missing initial state」画面で止まる）ため、Google ログインは Safari / Chrome で行ってもらう
+ */
 export function isInAppBrowser(ua: string): boolean {
-  return /\bLine\/|FBAN|FBAV|Instagram|MicroMessenger|KAKAOTALK|Twitter|; wv\)/i.test(ua);
+  return /\bLine\/|FBAN|FBAV|FB_IAB|Instagram|MicroMessenger|KAKAOTALK|Twitter|\bGSA\/|YJApp|; wv\)/i.test(ua);
 }

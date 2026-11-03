@@ -7,6 +7,8 @@ import { auth, enableTrustedDeviceCache, isTrustedDevice } from '../../lib/fireb
 import { Button, Card, Field, Logo, SegmentedControl, TextInput } from '../../components';
 import { authErrorMessage, isInAppBrowser, shouldFallbackToRedirect } from './logic/errors';
 import { defaultKeepSignedIn, isStandaloneDisplay } from './logic/keepSignedIn';
+import { INVITE_STORAGE_KEY, buildInviteLink, isValidToken } from './logic/invite';
+import { copyText } from './util';
 import './account.css';
 
 type Mode = 'login' | 'register';
@@ -38,8 +40,26 @@ export function LoginPage() {
     getRedirectResult(auth).catch((e) => setError(authErrorMessage(e)));
   }, []);
 
+  /** Safari / Chrome で開き直すためのリンク。招待から来た場合は招待リンクを作り直す（トークンは URL から退避済み） */
+  function reopenLink(): string {
+    let token: string | null = null;
+    try { token = sessionStorage.getItem(INVITE_STORAGE_KEY); } catch { /* ignore */ }
+    return token && isValidToken(token) ? buildInviteLink(window.location.origin, token) : `${window.location.origin}/login`;
+  }
+  async function copyReopenLink() {
+    setError(''); setInfo('');
+    if (await copyText(reopenLink())) setInfo('リンクをコピーしました。Safari または Chrome のアドレス欄に貼り付けて開いてください。');
+    else setError('コピーできませんでした。画面のメニューから「ブラウザで開く」を選んでください。');
+  }
+
   async function google() {
-    setError(''); setInfo(''); setBusy(true);
+    setError(''); setInfo('');
+    // アプリ内ブラウザではポップアップもリダイレクトも失敗する（リダイレクトは Firebase のエラー画面で止まる）ので試さない
+    if (inApp) {
+      setError('このアプリ内ブラウザでは Google ログインができません。上の「リンクをコピー」から Safari または Chrome で開くか、メールアドレスでログインしてください。');
+      return;
+    }
+    setBusy(true);
     const provider = new GoogleAuthProvider();
     // ポップアップはボタン押下の直後に開く必要がある（先に await するとブロックされる）。
     // 保存先の切り替えは Auth 内部で順番に処理されるので、ログインより先に反映される
@@ -91,7 +111,8 @@ export function LoginPage() {
       {inApp && (
         <Card tone="warning" className="stack">
           <strong>Safari または Chrome で開いてください</strong>
-          <p className="small">LINE などのアプリ内ブラウザでは Google ログインができません。画面右上（または下）のメニューから「ブラウザで開く」を選ぶか、リンクをコピーして Safari / Chrome に貼り付けてください。</p>
+          <p className="small">LINE・Google アプリ・Gmail などのアプリ内ブラウザでは Google ログインができません。画面のメニューから「ブラウザで開く」を選ぶか、下のボタンでリンクをコピーして Safari / Chrome に貼り付けてください。招待から来た場合も、コピーしたリンクから参加できます。</p>
+          <Button onClick={copyReopenLink}>リンクをコピー</Button>
         </Card>
       )}
 

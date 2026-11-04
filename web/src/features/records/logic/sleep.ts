@@ -1,8 +1,17 @@
 import type { Ev } from './types';
 
-export type SleepState = 'closed' | 'open' | 'conflict';
+/**
+ * - closed   : 寝た → 起きた がそろった睡眠
+ * - open     : 寝た のあと起きた が無い、最新の睡眠（＝いま寝ている）
+ * - unended  : 寝た のあと、起きた が無いまま次の 寝た が来た（起きた の記録漏れ）。時間は合計に入れない
+ * - unstarted: 寝ていない状態での 起きた（寝た の記録漏れ）。時間は合計に入れない
+ */
+export type SleepState = 'closed' | 'open' | 'unended' | 'unstarted';
 
 export interface SleepSession {
+  /** 一覧・描画のキー（開始または終了の記録 ID） */
+  key: string;
+  /** 新しい「起きた」を書くときに使う、開始記録の sessionId */
   sessionId: string;
   start?: Date;
   end?: Date;
@@ -11,80 +20,82 @@ export interface SleepSession {
   startCaregiver?: string | null;
   endCaregiver?: string | null;
   state: SleepState;
-  /** 確認待ちの理由 */
-  reason?: 'multiple_start' | 'multiple_end' | 'end_before_start' | 'orphan_end' | 'multiple_open';
 }
 
-/** 取得範囲の先頭からこの時間内の「開始なしの終了」は、開始が範囲外にあるとみなす */
+/** 取得範囲の先頭からこの時間内の「寝ていない状態での起きた」は、寝たが範囲外にあるとみなして出さない */
 const ORPHAN_END_LOOKBACK_MS = 86400000;
+/** 2 台の端末から同じ「寝た」「起きた」をほぼ同時に記録した場合は 1 件として扱う */
+export const SLEEP_DUPLICATE_MS = 30 * 60 * 1000;
+
+export interface SleepEventLike {
+  id: string;
+  type: string;
+  occurredAt: Date;
+}
+export interface SleepPair<T> { start?: T; end?: T; state: SleepState }
 
 /**
- * sleep_start / sleep_end を sessionId で対応づけてセッションを組み立てる。
- * 終了時刻を推測で埋めない。複数開始・複数終了・終了<開始・開始なしの終了は 'conflict'（確認待ち）。
- * 未終了のセッションが複数あれば、それらも 'conflict'。
- * windowStart（取得範囲の先頭）を渡すと、その直後の開始なしの終了は範囲外から跨いだ睡眠として除外する。
+ * 寝た／起きたを時刻順に読んで睡眠を組み立てる（記録の sessionId には頼らない）。
+ * 訂正で時刻を入れ替えても、一覧で見える順序（例: 22:15 起きた → 22:30 寝た）どおりに解釈するので、
+ * 利用者に訂正を求める「確認待ち」は作らない。終了時刻は推測で埋めない。
+ * - 寝ている間の「寝た」: 30 分以内なら重複として無視。それより後なら前の睡眠は unended として閉じ、新しい睡眠を始める
+ * - 起きている間の「起きた」: 直前の起床から 30 分以内なら重複として無視。それ以外は unstarted
+ * 同時刻の 起きた と 寝た は、起きた を先に読む（起きてすぐ寝かしつけた、の順）。
  */
-export function buildSleepSessions(events: Ev[], windowStart?: Date): SleepSession[] {
-  const map = new Map<string, { starts: Ev[]; ends: Ev[] }>();
-  for (const e of events) {
-    if (e.status !== 'active') continue;
-    if (e.type !== 'sleep_start' && e.type !== 'sleep_end') continue;
-    const sid = e.sessionId;
-    if (!sid) continue;
-    let g = map.get(sid);
-    if (!g) map.set(sid, (g = { starts: [], ends: [] }));
-    (e.type === 'sleep_start' ? g.starts : g.ends).push(e);
-  }
-  const out: SleepSession[] = [];
-  for (const [sessionId, g] of map) {
-    const s = g.starts.slice().sort((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime())[0];
-    const en = g.ends.slice().sort((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime())[0];
-    const base: SleepSession = {
-      sessionId,
-      start: s?.occurredAt,
-      end: en?.occurredAt,
-      startEventId: s?.id,
-      endEventId: en?.id,
-      startCaregiver: s?.caregiverUid,
-      endCaregiver: en?.caregiverUid,
-      state: 'closed',
-    };
-    if (g.starts.length > 1) out.push({ ...base, state: 'conflict', reason: 'multiple_start' });
-    else if (g.ends.length > 1) out.push({ ...base, state: 'conflict', reason: 'multiple_end' });
-    else if (!s) {
-      if (windowStart && en.occurredAt.getTime() - windowStart.getTime() < ORPHAN_END_LOOKBACK_MS) continue;
-      out.push({ ...base, state: 'conflict', reason: 'orphan_end' });
+export function pairSleepEvents<T extends SleepEventLike>(events: T[], windowStart?: Date): SleepPair<T>[] {
+  const list = events
+    .filter((e) => e.type === 'sleep_start' || e.type === 'sleep_end')
+    .slice()
+    .sort((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime() || (a.type === b.type ? 0 : a.type === 'sleep_end' ? -1 : 1));
+  const out: SleepPair<T>[] = [];
+  let cur: T | null = null;
+  let lastWake: Date | null = null;
+  for (const e of list) {
+    const t = e.occurredAt.getTime();
+    if (e.type === 'sleep_start') {
+      if (cur) {
+        if (t - cur.occurredAt.getTime() <= SLEEP_DUPLICATE_MS) continue;
+        out.push({ start: cur, state: 'unended' });
+      }
+      cur = e;
+    } else if (cur) {
+      out.push({ start: cur, end: e, state: 'closed' });
+      cur = null;
+      lastWake = e.occurredAt;
+    } else {
+      if (lastWake && t - lastWake.getTime() <= SLEEP_DUPLICATE_MS) continue;
+      lastWake = e.occurredAt;
+      if (windowStart && t - windowStart.getTime() < ORPHAN_END_LOOKBACK_MS) continue;
+      out.push({ end: e, state: 'unstarted' });
     }
-    else if (en && en.occurredAt.getTime() < s.occurredAt.getTime())
-      out.push({ ...base, state: 'conflict', reason: 'end_before_start' });
-    else if (!en) out.push({ ...base, state: 'open' });
-    else out.push(base);
   }
-  const open = out.filter((x) => x.state === 'open');
-  if (open.length > 1) for (const o of open) { o.state = 'conflict'; o.reason = 'multiple_open'; }
-  return out.sort((a, b) => (a.start ?? a.end!).getTime() - (b.start ?? b.end!).getTime());
+  if (cur) out.push({ start: cur, state: 'open' });
+  return out;
+}
+
+export function buildSleepSessions(events: Ev[], windowStart?: Date): SleepSession[] {
+  const active = events.filter((e) => e.status === 'active');
+  return pairSleepEvents(active, windowStart).map(({ start: s, end: en, state }) => ({
+    key: (s ?? en)!.id,
+    sessionId: s?.sessionId ?? en?.sessionId ?? (s ?? en)!.id,
+    start: s?.occurredAt,
+    end: en?.occurredAt,
+    startEventId: s?.id,
+    endEventId: en?.id,
+    startCaregiver: s?.caregiverUid,
+    endCaregiver: en?.caregiverUid,
+    state,
+  }));
 }
 
 export type CurrentSleep =
   | { kind: 'sleeping'; since: Date; session: SleepSession }
-  | { kind: 'awake'; lastWake: Date | null }
-  | { kind: 'unconfirmed'; sessions: SleepSession[] };
+  | { kind: 'awake'; lastWake: Date | null };
 
-/** ホーム用の現在状態 */
+/** ホーム用の現在状態。最後の記録が「寝た」なら睡眠中、それ以外は起きている */
 export function currentSleepState(sessions: SleepSession[]): CurrentSleep {
-  const conflicts = sessions.filter((s) => s.state === 'conflict');
-  if (conflicts.length > 0) return { kind: 'unconfirmed', sessions: conflicts };
   const open = sessions.find((s) => s.state === 'open');
   if (open) return { kind: 'sleeping', since: open.start!, session: open };
-  const closed = sessions.filter((s) => s.state === 'closed' && s.end);
-  const last = closed.reduce<Date | null>((m, s) => (!m || s.end!.getTime() > m.getTime() ? s.end! : m), null);
+  const last = sessions.reduce<Date | null>((m, s) => (s.end && (!m || s.end.getTime() > m.getTime()) ? s.end : m), null);
   return { kind: 'awake', lastWake: last };
 }
-
-export const SLEEP_REASON_TEXT: Record<NonNullable<SleepSession['reason']>, string> = {
-  multiple_start: '開始が複数あります',
-  multiple_end: '終了が複数あります',
-  end_before_start: '終了が開始より前になっています',
-  orphan_end: '対応する開始がありません',
-  multiple_open: '終了していない睡眠が複数あります',
-};

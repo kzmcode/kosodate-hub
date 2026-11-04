@@ -12,7 +12,6 @@ import { SummaryCard } from './SummaryCard';
 import { useEventsRange } from './hooks';
 import { summarizeDay } from './logic/aggregate';
 import { buildDayRoutine } from './logic/routine';
-import { SLEEP_REASON_TEXT } from './logic/sleep';
 import type { Ev } from './logic/types';
 import { useNow } from './useNow';
 import './records.css';
@@ -86,7 +85,6 @@ export function RecordsPage() {
     for (const s of sessions) if (s.state === 'closed' && s.start && s.end && s.endEventId) m.set(s.endEventId, `睡眠 ${formatDuration((s.end.getTime() - s.start.getTime()) / 1000)}`);
     return m;
   }, [sessions]);
-  const conflictSessions = sessions.filter((s) => s.state === 'conflict');
   const summary = summarizeDay(events, sessions, date, now);
 
   const zoomDef = ZOOMS.find((z) => z.key === zoom) ?? ZOOMS[0];
@@ -130,16 +128,6 @@ export function RecordsPage() {
 
       {!online && fromCache && <p className="small rec-warn-text">オフライン：キャッシュ表示です。最新ではない可能性があります。</p>}
       {error && <Card tone="danger" role="alert">記録を読み込めませんでした。通信を確認してください。</Card>}
-      {conflictSessions.length > 0 && (
-        <Card tone="warning">
-          <strong>睡眠の記録に確認待ちがあります</strong>
-          <ul className="small">
-            {conflictSessions.map((s) => (
-              <li key={s.sessionId}>{(s.start ?? s.end) && shortDate(todayStr((s.start ?? s.end)!))} {SLEEP_REASON_TEXT[s.reason!]}。該当の記録を訂正・無効化してください。</li>
-            ))}
-          </ul>
-        </Card>
-      )}
 
       {view !== 'week' && <SummaryCard s={summary} title={`${date === today ? '今日' : shortDate(date)}の集計`} />}
 
@@ -161,7 +149,7 @@ export function RecordsPage() {
             />
           )}
           <RoutineLegend />
-          <p className="small muted">空白は未記録の時間で、お世話がなかったとは限りません。薄い部分はまだ来ていない時間です。点線は終了未記録、斜線は確認待ちの睡眠です。{view === 'week' && '日付の行を押すとその日の一覧を開きます。'}</p>
+          <p className="small muted">空白は未記録の時間で、お世話がなかったとは限りません。薄い部分はまだ来ていない時間です。点線は終了未記録の睡眠です。{view === 'week' && '日付の行を押すとその日の一覧を開きます。'}</p>
         </Card>
       )}
 

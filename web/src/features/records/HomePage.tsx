@@ -12,7 +12,7 @@ import { RecordSheet, type RecordSheetType } from './RecordSheet';
 import { useEventsRange, useLatestOfType } from './hooks';
 import { amountText, feedingLabel, whoText } from './logic/describe';
 import { buildDayRoutine } from './logic/routine';
-import { SLEEP_REASON_TEXT, currentSleepState } from './logic/sleep';
+import { currentSleepState } from './logic/sleep';
 import { useNow } from './useNow';
 import { useRecorder } from './recorder';
 import './records.css';
@@ -52,7 +52,6 @@ export function HomePage() {
     record({ type: 'bath', occurredAt: new Date(), caregiverUid: user?.uid ?? null, payload: {} }, '沐浴');
   }
   function quickSleep() {
-    if (sleep.kind === 'unconfirmed') return setSheet('sleep');
     const at = new Date();
     if (sleep.kind === 'sleeping') {
       const s = sleep.session;
@@ -79,7 +78,7 @@ export function HomePage() {
           <section key={key} className="stack" aria-label="いまの状態">
             <Card className="rec-status">
               <div className={`rec-sleepcard rec-sleepcard--${sleep.kind}`}>
-                <span className="rec-sleepcard__icon"><CategoryIcon name={sleep.kind === 'awake' ? 'sun' : sleep.kind === 'unconfirmed' ? 'alert' : 'sleep'} size={40} strokeWidth={1.5} /></span>
+                <span className="rec-sleepcard__icon"><CategoryIcon name={sleep.kind === 'awake' ? 'sun' : 'sleep'} size={40} strokeWidth={1.5} /></span>
                 <div className="rec-sleepcard__text">
                   {sleep.kind === 'sleeping' && (<>
                     <strong className="rec-big">記録上は睡眠中</strong>
@@ -88,10 +87,6 @@ export function HomePage() {
                   {sleep.kind === 'awake' && (<>
                     <strong className="rec-big">起きている</strong>
                     <span className="small">{sleep.lastWake ? `最終起床 ${formatTime(sleep.lastWake)}（${formatElapsed(sleep.lastWake, now)}）` : '直近の睡眠記録はありません'}</span>
-                  </>)}
-                  {sleep.kind === 'unconfirmed' && (<>
-                    <strong className="rec-big">睡眠：確認待ち</strong>
-                    <span className="small">{SLEEP_REASON_TEXT[sleep.sessions[0].reason!]}。<Link to="/records">記録を確認</Link></span>
                   </>)}
                 </div>
               </div>
@@ -110,8 +105,8 @@ export function HomePage() {
                 const t = TILE[k];
                 if (!t) return null;
                 if (k === 'sleep') {
-                  const label = sleep.kind === 'sleeping' ? '起きた' : sleep.kind === 'unconfirmed' ? '睡眠を確認' : '寝た';
-                  return <CategoryTile key={k} category="sleep" icon={sleep.kind === 'sleeping' ? 'sun' : sleep.kind === 'unconfirmed' ? 'alert' : undefined} label={label} onClick={quickSleep} disabled={loading} />;
+                  const label = sleep.kind === 'sleeping' ? '起きた' : '寝た';
+                  return <CategoryTile key={k} category="sleep" icon={sleep.kind === 'sleeping' ? 'sun' : undefined} label={label} onClick={quickSleep} disabled={loading} />;
                 }
                 const click = k === 'vomit' ? quickVomit : k === 'bath' ? quickBath : () => setSheet(k as RecordSheetType);
                 return <CategoryTile key={k} category={t.cat} label={t.label} onClick={click} />;

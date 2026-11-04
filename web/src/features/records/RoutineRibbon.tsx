@@ -1,4 +1,3 @@
-import { useId } from 'react';
 import { CategoryIcon, type CategoryName } from '../../components';
 import { MARKER_LABEL } from './logic/describe';
 import { layoutRibbonMarkers, ribbonX } from './logic/ribbon';
@@ -13,7 +12,6 @@ interface Props {
 
 /** Shared by home and records: the bar, marker lanes and time axis scale together. */
 export function RoutineRibbon({ routine, fromHour = 0, toHour = 24, onMarkerClick }: Props) {
-  const hatchId = useId().replace(/:/g, '');
   const x = (minute: number) => ribbonX(minute, fromHour, toHour);
   const ticks: number[] = [];
   const step = toHour - fromHour <= 6 ? 1 : 6;
@@ -22,12 +20,6 @@ export function RoutineRibbon({ routine, fromHour = 0, toHour = 24, onMarkerClic
 
   return (
     <svg className="rec-ribbon" viewBox="0 0 360 100" role={onMarkerClick ? 'group' : undefined} aria-label={onMarkerClick ? `${fromHour}時から${toHour}時の記録` : undefined} aria-hidden={onMarkerClick ? undefined : true}>
-      <defs>
-        <pattern id={hatchId} width="5" height="5" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-          <rect width="5" height="5" fill="var(--cat-sleep-bg)" />
-          <line x1="0" x2="0" y1="0" y2="5" stroke="var(--cat-vomit-fg)" strokeWidth="1" />
-        </pattern>
-      </defs>
       <rect x="12" y="50" width="336" height="20" rx="10" fill="var(--color-border)" fillOpacity="0.55" />
       {ticks.slice(1, -1).map((hour) => <line key={hour} x1={x(hour * 60)} x2={x(hour * 60)} y1="50" y2="70" stroke="var(--color-surface)" strokeWidth="2" />)}
       {routine.bands.map((band, index) => {
@@ -35,8 +27,8 @@ export function RoutineRibbon({ routine, fromHour = 0, toHour = 24, onMarkerClic
         const width = x(band.endMin) - x(band.startMin);
         if (width <= 0) return null;
         return <g key={`${band.sessionId}-${index}`}>
-          <title>{band.kind === 'closed' ? '睡眠' : band.kind === 'open' ? '終了未記録の睡眠' : '確認待ちの睡眠'}</title>
-          <rect x={x(band.startMin)} y="50" width={width} height="20" rx="10" fill={band.kind === 'conflict' ? `url(#${hatchId})` : 'var(--cat-sleep-bg)'} stroke={band.kind === 'closed' ? 'none' : 'var(--cat-sleep-fg)'} strokeDasharray={band.kind === 'closed' ? undefined : '3 3'} />
+          <title>{band.kind === 'closed' ? '睡眠' : '終了未記録の睡眠'}</title>
+          <rect x={x(band.startMin)} y="50" width={width} height="20" rx="10" fill="var(--cat-sleep-bg)" stroke={band.kind === 'closed' ? 'none' : 'var(--cat-sleep-fg)'} strokeDasharray={band.kind === 'closed' ? undefined : '3 3'} />
           {width > 22 && <g transform={`translate(${x(band.startMin) + width / 2 - 7} 53)`} color="var(--cat-sleep-fg)"><CategoryIcon name="sleep" size={14} /></g>}
         </g>;
       })}

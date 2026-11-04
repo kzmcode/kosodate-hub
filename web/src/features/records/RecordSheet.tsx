@@ -230,7 +230,7 @@ export function RecordSheet({ open, type, onClose, initialEvent, onSaved }: Reco
       const id = record({ type: 'sleep_start', occurredAt: when, caregiverUid: caregiver, sessionId, payload: { sessionId }, note: note.trim() || undefined }, '寝た');
       if (id) { onSaved?.(id); onClose(); }
     } else {
-      if (sleepNow.kind !== 'sleeping') { setError('終了していない睡眠が1件に特定できません。記録画面で睡眠の状態を確認してください。'); return; }
+      if (sleepNow.kind !== 'sleeping') { setError('睡眠中の記録がありません。先に「寝た」を記録してください。'); return; }
       const s = sleepNow.session;
       if (s.start && when < s.start) { setError('起きた時刻が寝た時刻より前になっています。'); return; }
       const id = record(
@@ -365,15 +365,12 @@ export function RecordSheet({ open, type, onClose, initialEvent, onSaved }: Reco
             />
           )}
           {!editing && sleepNow.kind === 'sleeping' && sleepKind === 'start' && (
-            <p className="rec-warn">すでに睡眠中（記録上）です。もう一度「寝た」を記録すると、睡眠が重複して「確認待ち」になります。</p>
-          )}
-          {!editing && sleepNow.kind === 'unconfirmed' && (
-            <p className="rec-warn">睡眠の記録に矛盾があり「確認待ち」です。記録画面で該当の記録を訂正・無効化してください。</p>
+            <p className="rec-warn">すでに睡眠中（記録上）です。起きたときは「起きた」を選んでください。</p>
           )}
           {confirmDouble && (
             <div className="rec-warn" role="alert">
               <strong>本当に「寝た」を追加しますか？</strong>
-              <p className="small">現在、睡眠が終了していません。追加すると両方が確認待ちになり、後から訂正・無効化が必要になります。</p>
+              <p className="small">現在、睡眠が終了していません。追加すると、前の睡眠は「起きた」が未記録のまま、新しい睡眠として始まります。</p>
               <div className="row">
                 <Button variant="danger" onClick={() => void saveSleep()}>重複を承知で追加する</Button>
                 <Button onClick={() => setConfirmDouble(false)}>やめる</Button>

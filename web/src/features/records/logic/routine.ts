@@ -8,7 +8,7 @@ export interface SleepBand {
   /** その日の 0:00 からの分 */
   startMin: number;
   endMin: number;
-  kind: 'closed' | 'open' | 'conflict';
+  kind: 'closed' | 'open';
 }
 
 export type MarkerKind =
@@ -71,17 +71,10 @@ export function buildDayRoutine(
     if (ss.state === 'closed' && ss.start && ss.end) {
       const c = clipInterval(ss.start, ss.end, start, end);
       const c2 = c && clipInterval(c.start, c.end, start, now);
-      if (c2) bands.push({ sessionId: ss.sessionId, startMin: toMin(c2.start, start), endMin: toMin(c2.end, start), kind: 'closed' });
+      if (c2) bands.push({ sessionId: ss.key, startMin: toMin(c2.start, start), endMin: toMin(c2.end, start), kind: 'closed' });
     } else if (ss.state === 'open' && ss.start) {
       const c = clipInterval(ss.start, now, start, end);
-      if (c) bands.push({ sessionId: ss.sessionId, startMin: toMin(c.start, start), endMin: toMin(c.end, start), kind: 'open' });
-    } else if (ss.state === 'conflict' && ss.start && !ss.end) {
-      // 矛盾した未終了の開始。現在までを確認待ちとして表示
-      const c = clipInterval(ss.start, now, start, end);
-      if (c) bands.push({ sessionId: ss.sessionId, startMin: toMin(c.start, start), endMin: toMin(c.end, start), kind: 'conflict' });
-    } else if (ss.state === 'conflict' && ss.start && ss.end && ss.end > ss.start) {
-      const c = clipInterval(ss.start, ss.end, start, end);
-      if (c) bands.push({ sessionId: ss.sessionId, startMin: toMin(c.start, start), endMin: toMin(c.end, start), kind: 'conflict' });
+      if (c) bands.push({ sessionId: ss.key, startMin: toMin(c.start, start), endMin: toMin(c.end, start), kind: 'open' });
     }
   }
   const markers: Marker[] = [];

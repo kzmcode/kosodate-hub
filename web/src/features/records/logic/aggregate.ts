@@ -27,7 +27,6 @@ export interface DailySummary {
   sleepConfirmedSeconds: number;
   /** 未終了（現在まで）の暫定秒数 */
   sleepOpenSeconds: number;
-  sleepConflictCount: number;
 }
 
 /** 当日（dateStr）の集計。void は呼び出し側で除外済み（念のためここでも除外） */
@@ -38,7 +37,7 @@ export function summarizeDay(events: Ev[], sessions: SleepSession[], dateStr: st
     pumpingCount: 0, pumpingMl: 0, pumpingUnknownCount: 0,
     diaperCount: 0, urineCount: 0, stoolCount: 0, diaperUnknownCount: 0,
     vomitCount: 0, bathCount: 0, otherCount: 0,
-    sleepConfirmedSeconds: 0, sleepOpenSeconds: 0, sleepConflictCount: 0,
+    sleepConfirmedSeconds: 0, sleepOpenSeconds: 0,
   };
   for (const e of events) {
     if (e.status !== 'active') continue;
@@ -75,11 +74,6 @@ export function summarizeDay(events: Ev[], sessions: SleepSession[], dateStr: st
     }
   }
   for (const ss of sessions) {
-    if (ss.state === 'conflict') {
-      const t = (ss.start ?? ss.end)!.getTime();
-      if (t >= start.getTime() && t < end.getTime()) s.sleepConflictCount++;
-      continue;
-    }
     if (!ss.start) continue;
     if (ss.state === 'closed' && ss.end) {
       const c = clipInterval(ss.start, ss.end, start, end);

@@ -31,7 +31,6 @@ export function SummaryCard({ s, title = '当日の集計' }: { s: DailySummary;
         <dd>
           確定 <strong className="num">{formatDuration(s.sleepConfirmedSeconds)}</strong>
           {s.sleepOpenSeconds > 0 && <span>　＋ 終了未記録 {formatDuration(s.sleepOpenSeconds)}（暫定・別枠）</span>}
-          {s.sleepConflictCount > 0 && <span className="rec-warn-text">　確認待ち {s.sleepConflictCount}件</span>}
         </dd>
         <dt>吐いた</dt><dd>{s.vomitCount}回</dd>
         <dt>沐浴</dt><dd>{s.bathCount}回</dd>

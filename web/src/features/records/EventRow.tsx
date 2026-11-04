@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { CategoryIcon, SyncBadge, syncStateOf } from '../../components';
 import { useFamily } from '../../context';
 import { formatTime } from '../../lib/time';
-import { categoryOf, describeEvent, whoText } from './logic/describe';
+import { describeEvent, eventVisualOf, whoText } from './logic/describe';
 import type { Ev } from './logic/types';
 
 interface Props {
@@ -20,11 +20,11 @@ interface Props {
 export function EventRow({ ev, showDate, highlight, tag, to, compact }: Props) {
   const { memberName } = useFamily();
   const d = describeEvent(ev);
-  const cat = categoryOf(ev.type);
+  const v = eventVisualOf(ev.type);
   return (
     <Link to={to ?? `/records/${ev.id}`} className={`rec-row${compact ? ' rec-row--compact' : ''}${highlight ? ' is-target' : ''}`}>
-      <span className="rec-row__icon" style={{ background: `var(--cat-${cat}-bg)`, color: `var(--cat-${cat}-fg)` }}>
-        <CategoryIcon name={cat} size={26} />
+      <span className="rec-row__icon" style={{ background: `var(--cat-${v.tone}-bg)`, color: `var(--cat-${v.tone}-fg)` }}>
+        <CategoryIcon name={v.icon} size={26} />
       </span>
       <span className="rec-row__main">
         <span className="rec-row__title">

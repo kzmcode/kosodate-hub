@@ -1,11 +1,21 @@
 import type { Ev } from './types';
-import type { CategoryName } from '../../../components';
+import type { CategoryName, UiIconName } from '../../../components';
 
 export const TYPE_LABEL: Record<string, string> = {
   feeding: '授乳・ミルク', pumping: '搾乳', diaper: 'おむつ', sleep_start: '寝た', sleep_end: '起きた',
   bath: '沐浴', vomit: '吐いた', temperature: '体温', symptom: '症状', growth: '身長・体重',
   medication_taken: '服薬', meal: '食事', milestone: 'できたこと', memo: 'その他',
 };
+
+/**
+ * 記録 1 件のアイコンと色。基本は分類どおりだが、「起きた」はホームの起きたボタンと同じ太陽・起床色にする
+ * （分類は睡眠のまま。絞り込みや集計は categoryOf を使う）
+ */
+export function eventVisualOf(type: string): { icon: CategoryName | UiIconName; tone: string } {
+  if (type === 'sleep_end') return { icon: 'sun', tone: 'wake' };
+  const cat = categoryOf(type);
+  return { icon: cat, tone: cat };
+}
 
 export function categoryOf(type: string): CategoryName {
   switch (type) {

@@ -11,7 +11,7 @@ import type { DailyEvent } from '../../types/models';
 import { EventRow } from './EventRow';
 import { RecordSheet, sheetTypeOf } from './RecordSheet';
 import { useEventsRange } from './hooks';
-import { amountText, categoryOf, describeEvent, feedingLabel, whoText } from './logic/describe';
+import { amountText, describeEvent, eventVisualOf, feedingLabel, whoText } from './logic/describe';
 import { buildReflection } from './logic/reflection';
 import { toEv, type Ev, type EventDoc } from './logic/types';
 import './records.css';
@@ -53,7 +53,7 @@ export function EventDetailPage() {
     );
   }
   const d = describeEvent(ev);
-  const cat = categoryOf(ev.type);
+  const v = eventVisualOf(ev.type);
   const sheetType = sheetTypeOf(ev);
   const isVoid = ev.status === 'void';
 
@@ -77,9 +77,9 @@ export function EventDetailPage() {
         <SyncBadge state={syncStateOf({ pending: ev.pending })} />
       </div>
 
-      <Card style={{ background: `var(--cat-${cat}-bg)`, color: `var(--cat-${cat}-fg)` }}>
+      <Card style={{ background: `var(--cat-${v.tone}-bg)`, color: `var(--cat-${v.tone}-fg)` }}>
         <div className="row">
-          <CategoryIcon name={cat} size={32} />
+          <CategoryIcon name={v.icon} size={32} />
           <div>
             <h1 className="rec-h1">{d.title}</h1>
             {d.detail && <div>{d.detail}</div>}

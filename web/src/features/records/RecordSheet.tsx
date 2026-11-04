@@ -385,9 +385,7 @@ export function RecordSheet({ open, type, onClose, initialEvent, onSaved }: Reco
         <div className="ch-field__label">実施者</div>
         <MemberPicker value={caregiver} onChange={setCaregiver} label="実施者" />
       </div>
-      {(editing || type === 'vomit' || type === 'other') && (
-        <Field label="メモ" optional>{({ id }) => <TextArea id={id} value={note} maxLength={2000} onChange={(e) => setNote(e.target.value)} />}</Field>
-      )}
+      <Field label="メモ" optional>{({ id }) => <TextArea id={id} value={note} maxLength={2000} onChange={(e) => setNote(e.target.value)} />}</Field>
       {error && <p className="ch-field__error" role="alert">{error}</p>}
       {!editing && <p className="small muted">保存は端末に即反映され、通信できるときに共有されます。</p>}
     </div>

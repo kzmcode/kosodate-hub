@@ -14,7 +14,14 @@ export function SummaryCard({ s, title = '当日の集計' }: { s: DailySummary;
           {feedTotal}回（母乳 {s.breastCount} / ミルク {s.formulaCount} / 搾母乳 {s.expressedCount}）
           <br />
           ミルク・搾母乳の量 <strong className="num">{s.milkMl}mL</strong>
+          <span className="muted">（ミルク {s.formulaMl}mL / 搾母乳 {s.expressedMl}mL）</span>
           {s.milkUnknownCount > 0 && <span className="muted">（量未入力 {s.milkUnknownCount}件は含まず）</span>}
+          {s.breastCount > 0 && (<>
+            <br />
+            母乳の時間 <strong className="num">{formatDuration(s.breastSeconds)}</strong>
+            <span className="muted">（左 {formatDuration(s.breastLeftSeconds)} / 右 {formatDuration(s.breastRightSeconds)}）</span>
+            {s.breastTimeUnknownCount > 0 && <span className="muted">（時間未入力 {s.breastTimeUnknownCount}件は含まず）</span>}
+          </>)}
         </dd>
         <dt>搾乳</dt>
         <dd>

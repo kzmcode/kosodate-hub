@@ -101,6 +101,21 @@ describe('summarizeDay', () => {
     const d = summarizeDay(evs, [], '2026-10-08');
     expect(d).toMatchObject({ milkMl: 120, milkUnknownCount: 1, breastCount: 1, formulaCount: 2, expressedCount: 1, pumpingCount: 2, pumpingMl: 100, pumpingUnknownCount: 1 });
   });
+  it('母乳の時間（左右）と、ミルク・搾母乳の量を分けて集計', () => {
+    const evs = [
+      ev('feeding', '2026-10-08T08:00:00', { method: 'breast', leftSeconds: 600, rightSeconds: 300 }),
+      ev('feeding', '2026-10-08T10:00:00', { method: 'breast', leftSeconds: 420 }),
+      ev('feeding', '2026-10-08T12:00:00', { method: 'breast' }),
+      ev('feeding', '2026-10-08T13:00:00', { method: 'formula', consumedMl: 100 }),
+      ev('feeding', '2026-10-08T14:00:00', { method: 'expressed_breast_milk', consumedMl: 60 }),
+      ev('feeding', '2026-10-08T15:00:00', { method: 'expressed_breast_milk', consumedMl: 20 }),
+      ev('pumping', '2026-10-08T16:00:00', { expressedMl: 90 }),
+    ];
+    expect(summarizeDay(evs, [], '2026-10-08')).toMatchObject({
+      breastCount: 3, breastSeconds: 1320, breastLeftSeconds: 1020, breastRightSeconds: 300, breastTimeUnknownCount: 1,
+      formulaMl: 100, expressedMl: 80, milkMl: 180, pumpingMl: 90,
+    });
+  });
   it('おむつ: 両方は交換1・尿1・便1、未確認は0に変換しない', () => {
     const evs = [
       ev('diaper', '2026-10-08T08:00:00', { urine: 'yes', stool: 'yes', changed: true }),

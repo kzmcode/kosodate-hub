@@ -11,6 +11,16 @@ export interface DailySummary {
   milkMl: number;
   /** ミルク・搾母乳で量未入力の件数 */
   milkUnknownCount: number;
+  /** ミルクの既知の量の合計（milkMl の内訳） */
+  formulaMl: number;
+  /** 搾母乳（搾った母乳を飲ませた量）の既知の量の合計（milkMl の内訳） */
+  expressedMl: number;
+  /** 母乳の授乳時間（左右の合計・秒）。時間が入力された記録だけ */
+  breastSeconds: number;
+  breastLeftSeconds: number;
+  breastRightSeconds: number;
+  /** 母乳で左右とも時間未入力の件数 */
+  breastTimeUnknownCount: number;
   /** 母乳で量が記録されていた場合の合計（参考） */
   pumpingCount: number;
   pumpingMl: number;
@@ -33,7 +43,8 @@ export interface DailySummary {
 export function summarizeDay(events: Ev[], sessions: SleepSession[], dateStr: string, now: Date = new Date()): DailySummary {
   const { start, end } = dayRange(dateStr);
   const s: DailySummary = {
-    breastCount: 0, formulaCount: 0, expressedCount: 0, milkMl: 0, milkUnknownCount: 0,
+    breastCount: 0, formulaCount: 0, expressedCount: 0, milkMl: 0, milkUnknownCount: 0, formulaMl: 0, expressedMl: 0,
+    breastSeconds: 0, breastLeftSeconds: 0, breastRightSeconds: 0, breastTimeUnknownCount: 0,
     pumpingCount: 0, pumpingMl: 0, pumpingUnknownCount: 0,
     diaperCount: 0, urineCount: 0, stoolCount: 0, diaperUnknownCount: 0,
     vomitCount: 0, bathCount: 0, otherCount: 0,
@@ -47,12 +58,21 @@ export function summarizeDay(events: Ev[], sessions: SleepSession[], dateStr: st
       case 'feeding': {
         const m = e.payload.method;
         const ml = e.payload.consumedMl;
-        if (m === 'breast') s.breastCount++;
-        else {
+        if (m === 'breast') {
+          s.breastCount++;
+          const l = e.payload.leftSeconds, r = e.payload.rightSeconds;
+          const ls = typeof l === 'number' ? l : 0, rs = typeof r === 'number' ? r : 0;
+          if (typeof l !== 'number' && typeof r !== 'number') s.breastTimeUnknownCount++;
+          s.breastLeftSeconds += ls;
+          s.breastRightSeconds += rs;
+          s.breastSeconds += ls + rs;
+        } else {
           if (m === 'formula') s.formulaCount++;
           else s.expressedCount++;
-          if (typeof ml === 'number') s.milkMl += ml;
-          else s.milkUnknownCount++;
+          if (typeof ml === 'number') {
+            s.milkMl += ml;
+            if (m === 'formula') s.formulaMl += ml; else s.expressedMl += ml;
+          } else s.milkUnknownCount++;
         }
         break;
       }

@@ -162,7 +162,7 @@ export function RecordsPage() {
               return (
                 <button key={d} type="button" role="row" className="rec-weekrow" onClick={() => set({ view: 'day', date: d === today ? null : d })}>
                   <strong>{shortDate(d)}</strong>
-                  <span>哺乳 {s.breastCount + s.formulaCount + s.expressedCount}回{s.milkMl > 0 ? ` / ${s.milkMl}mL` : ''}{s.milkUnknownCount > 0 ? `（量未入力${s.milkUnknownCount}）` : ''}</span>
+                  <span>哺乳 {s.breastCount + s.formulaCount + s.expressedCount}回{s.milkMl > 0 ? ` / ${s.milkMl}mL` : ''}{s.milkUnknownCount > 0 ? `（量未入力${s.milkUnknownCount}）` : ''}{s.breastSeconds > 0 ? ` / 母乳 ${formatDuration(s.breastSeconds)}` : ''}{s.expressedMl > 0 ? ` / 搾母乳 ${s.expressedMl}mL` : ''}</span>
                   <span>尿 {s.urineCount} 便 {s.stoolCount} 吐 {s.vomitCount} 浴 {s.bathCount}</span>
                   <span>睡眠 {formatDuration(s.sleepConfirmedSeconds)}{s.sleepOpenSeconds > 0 ? ' +未終了' : ''}</span>
                 </button>

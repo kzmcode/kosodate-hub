@@ -100,6 +100,7 @@ cd web && npm run dev
 
 - **Rules / Indexes**: `firebase deploy --only firestore:rules,firestore:indexes`
 - **Hosting**: `npm --prefix web run build` の後に `firebase deploy --only hosting`（開発用の値は `web/.env.development.local` に置く。本番ビルドにエミュレータ接続・`demo-` プロジェクト・ローカルの GAS が入るとビルドが止まる）
+- **バージョン**: `web/package.json` の `version`・Git のタグ（`vX.Y.Z`）・[CHANGELOG.md](CHANGELOG.md) をそろえて上げる。新機能は `0.x`、修正だけなら `0.x.y`。アプリの「設定 → アプリ情報」に表示される
 - **GAS**: `cd gas && npm run push`（build と `clasp push`）。更新は Apps Script エディタの「デプロイを管理」で既存デプロイを新バージョンにし、`/exec` の URL を固定します。`clasp deploy` / `npm run deploy` は新しいデプロイを作るため初回のみ使います。
 - **トリガー**: 初回にエディタで `setupTriggers` を実行して権限を承認し、`dispatchNotifications`（5分毎）と `dailyBackup` を作成します。
 - 順序は GAS、Rules / Indexes、Hosting の順です。

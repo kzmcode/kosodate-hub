@@ -1,7 +1,8 @@
 import { Card } from '../../components';
 import { SubPage } from './SubPage';
 
-export const APP_VERSION = '0.1.0';
+/** web/package.json の version。リリースのたびに Git のタグ（vX.Y.Z）と CHANGELOG.md をそろえて上げる */
+export const APP_VERSION = __APP_VERSION__;
 
 export function AboutSection() {
   return (

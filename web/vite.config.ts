@@ -3,11 +3,14 @@ import { loadEnv } from 'vite';
 import { assertNoEmulatorsInProduction } from './src/lib/buildCheck.ts';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import pkg from './package.json' with { type: 'json' };
 
 // firebase-messaging-sw.js は public/ に置き、別スコープ（/firebase-cloud-messaging-push-scope）で動かす
 export default defineConfig(({ mode }) => {
   assertNoEmulatorsInProduction(mode, { ...loadEnv(mode, process.cwd(), 'VITE_'), ...process.env });
   return {
+  // アプリのバージョン（package.json）。設定 > アプリ情報 に表示する
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   plugins: [
     react(),
     VitePWA({
